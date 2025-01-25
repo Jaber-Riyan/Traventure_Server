@@ -46,6 +46,9 @@ async function run() {
         // database 
         const database = client.db('Traventure');
 
+        // tour packages collection 
+        const tourPackagesCollection = database.collection('tourpackages')
+
         // menu collection 
         const menuCollection = database.collection('menu');
 
@@ -142,7 +145,10 @@ async function run() {
                         data: result
                     });
                 }
-                const insertResult = await userCollection.insertOne(user);
+                const withRole = {
+                    ...user, role: "tourist"
+                }
+                const insertResult = await userCollection.insertOne(withRole);
                 res.json({
                     status: true,
                     message: 'User added successfully',
@@ -216,16 +222,22 @@ async function run() {
             if (req.user.email !== email) return res.status(403).json({ message: "unauthorized" });
             const query = { email: email };
             const user = await userCollection.findOne(query);
-            let isAdmin = false;
-            if (user) {
-                isAdmin = user?.role === "admin";
+            let role = null;
+            if (user?.role === "admin") {
+                role = user?.role;
             }
-            if(email===undefined) {
-                isAdmin = false
+            if (user?.role === "tourGuide") {
+                role = "tourGuide"
+            }
+            if (user?.role === "tourist") {
+                role = "tourist"
+            }
+            if (email === undefined) {
+                role = false
             }
             res.json({
                 status: true,
-                data: isAdmin
+                data: role
             })
         })
 
@@ -375,6 +387,22 @@ async function run() {
                 status: true,
                 data: result
             });
+        })
+
+
+
+        // tour packages related APIS 
+        // tour packages insert API 
+        app.post('/add-package', async (req, res) => {
+            const packageBody = req.body
+            const query = packageBody?.name
+            const isExistPackage = await tourPackagesCollection.findOne(query)
+            if (isExistPackage) res.status(401).send({ message: "unauthorized access" })
+            const result = await tourPackagesCollection.insertOne(packageBody)
+            res.json({
+                status: true,
+                data: result
+            })
         })
 
 
