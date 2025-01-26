@@ -241,6 +241,17 @@ async function run() {
             })
         })
 
+        // get one user API 
+        app.get('/user/:email', async (req, res) => {
+            const email = req.params.email
+            const query = { email: email }
+            const result = await userCollection.findOne(query)
+            res.json({
+                status: true,
+                data: result
+            })
+        })
+
         // stripe payment related APIS 
         // stripe payment intent API 
         app.post('/create-payment-intent', verifyToken, async (req, res) => {
