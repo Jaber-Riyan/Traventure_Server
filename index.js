@@ -242,10 +242,28 @@ async function run() {
         })
 
         // get one user API 
-        app.get('/user/:email', async (req, res) => {
+        app.get('/user/:email', verifyToken, async (req, res) => {
             const email = req.params.email
             const query = { email: email }
             const result = await userCollection.findOne(query)
+            res.json({
+                status: true,
+                data: result
+            })
+        })
+
+        // update one user info API 
+        app.patch('/user', verifyToken, async (req, res) => {
+            const body = req.body
+            const id = body?.id
+            const query = { _id: new ObjectId(id) }
+            const updatedDoc = {
+                $set: {
+                    name: body?.name,
+                }
+            }
+            console.log(updatedDoc);
+            const result = await userCollection.updateOne(query, updatedDoc);
             res.json({
                 status: true,
                 data: result
