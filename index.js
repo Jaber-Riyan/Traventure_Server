@@ -18,6 +18,7 @@ app.use(express.json());
 app.use(cors({
     origin: [
         'http://localhost:5173',
+        'https://traventuree.netlify.app',
     ],
     credentials: true,
 }));
@@ -71,11 +72,14 @@ async function run() {
         // verify token middleware
         const verifyToken = (req, res, next) => {
             // console.log("Inside the verify token");
-            const token = req?.cookies?.authToken;
-            // console.log(token);
-            if (!token) {
+            if (!req?.headers?.authorization) {
                 return res.status(401).json({ message: "Unauthorized Access!" });
             }
+            
+            // get token from the headers 
+            const token = req?.headers?.authorization?.split(' ')[1];
+            // console.log(token);
+
             jwt.verify(token, process.env.JWT_SECRET, (err, decoded) => {
                 if (err) {
                     return res.status(401).json({ message: err.message });
@@ -113,29 +117,8 @@ async function run() {
         // JWT token create API 
         app.post('/jwt/create', async (req, res) => {
             const user = req.body;
-            const token = jwt.sign(user, process.env.JWT_SECRET, { expiresIn: '1d' });
-            res
-                .cookie('authToken', token, {
-                    httpOnly: true,
-                    secure: process.env.NODE_ENV === 'production',
-                    sameSite: process.env.NODE_ENV === "production" ? "none" : "strict"
-                })
-                .json({
-                    status: true
-                })
-        })
-
-        // JWT token remove API 
-        app.post('/jwt/remove', async (req, res) => {
-            res
-                .clearCookie('authToken', {
-                    httpOnly: true,
-                    secure: process.env.NODE_ENV === 'production',
-                    sameSite: process.env.NODE_ENV === "production" ? "none" : "strict"
-                })
-                .json({
-                    status: true
-                })
+            const token = jwt.sign(user, process.env.JWT_SECRET, { expiresIn: '7h' });
+            res.send({ token })
         })
 
 
@@ -175,7 +158,7 @@ async function run() {
                 console.error('Error adding/updating user:', error);
                 res.status(500).json({
                     status: false,
-                    message: 'Failed to add or update user',
+                    message: 'Failed to add or update userr',
                     error: error.message
                 });
             }
@@ -242,7 +225,7 @@ async function run() {
             }
         });
 
-        // get logged user admin or amjonota API 
+        // get logged user admin, tourGuide or tourist API 
         app.get('/users/admin/:email', verifyToken, async (req, res) => {
             const email = req.params.email;
             if (req.user.email !== email) return res.status(403).json({ message: "unauthorized" });
