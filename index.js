@@ -49,6 +49,9 @@ async function run() {
         // tour packages collection 
         const tourPackagesCollection = database.collection('tourpackages')
 
+        // request for role collection 
+        const requestRoleCollection = database.collection("role request")
+
         // menu collection 
         const menuCollection = database.collection('menu');
 
@@ -88,6 +91,18 @@ async function run() {
             const query = { email: email };
             const user = await userCollection.findOne(query);
             const isAdmin = user?.role === 'admin';
+            if (!isAdmin) {
+                return res.status(403).send({ message: 'forbidden access' });
+            }
+            next();
+        }
+
+        // verify tourGuide middleware after verify token
+        const verifyTourGuide = async (req, res, next) => {
+            const email = req.user.email;
+            const query = { email: email };
+            const user = await userCollection.findOne(query);
+            const isAdmin = user?.role === 'tourGuide';
             if (!isAdmin) {
                 return res.status(403).send({ message: 'forbidden access' });
             }
@@ -190,14 +205,25 @@ async function run() {
             })
         })
 
+        // get the all tour guide users API 
+        app.get('/users/tourguide', async (req, res) => {
+            const query = { role: "tourGuide" }
+            const result = await userCollection.find(query).toArray()
+            res.json({
+                status: true,
+                data: result
+            })
+        })
+
         // users set admin role API 
-        app.patch('/users/admin/:id', verifyToken, verifyAdmin, async (req, res) => {
-            const id = req.params.id;
+        app.patch('/user/admin', verifyToken, verifyAdmin, async (req, res) => {
+            const id = req.body.id;
+            const body = req.body
             try {
                 const query = { _id: new ObjectId(id) };
                 const updatedData = {
                     $set: {
-                        role: 'admin',
+                        role: body?.updatedRole,
                     }
                 };
                 const result = await userCollection.updateOne(query, updatedData);
