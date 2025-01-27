@@ -19,6 +19,7 @@ app.use(cors({
     origin: [
         'http://localhost:5173',
         'https://traventuree.netlify.app',
+        'http://localhost:4173'
     ],
     credentials: true,
 }));
@@ -72,18 +73,21 @@ async function run() {
         // verify token middleware
         const verifyToken = (req, res, next) => {
             // console.log("Inside the verify token");
+            // console.log("received request:", req?.headers?.authorization);
             if (!req?.headers?.authorization) {
                 return res.status(401).json({ message: "Unauthorized Access!" });
             }
-            
+
             // get token from the headers 
-            const token = req?.headers?.authorization?.split(' ')[1];
-            // console.log(token);
+            const token = req?.headers?.authorization;
+            console.log("Received Token", token);
 
             jwt.verify(token, process.env.JWT_SECRET, (err, decoded) => {
                 if (err) {
+                    console.error('JWT Verification Error:', err.message);
                     return res.status(401).json({ message: err.message });
                 }
+                console.log('Decoded Token:', decoded);
                 req.user = decoded;
                 next();
             })
@@ -226,7 +230,7 @@ async function run() {
         });
 
         // get logged user admin, tourGuide or tourist API 
-        app.get('/users/admin/:email', verifyToken, async (req, res) => {
+        app.get('/users/role/:email', verifyToken, async (req, res) => {
             const email = req.params.email;
             if (req.user.email !== email) return res.status(403).json({ message: "unauthorized" });
             const query = { email: email };
@@ -431,12 +435,28 @@ async function run() {
 
         // tour packages related APIS 
         // tour packages insert API 
-        app.post('/add-package', async (req, res) => {
+        app.post('/packages', verifyToken, verifyAdmin, async (req, res) => {
             const packageBody = req.body
-            const query = packageBody?.name
-            const isExistPackage = await tourPackagesCollection.findOne(query)
-            if (isExistPackage) res.status(401).send({ message: "unauthorized access" })
             const result = await tourPackagesCollection.insertOne(packageBody)
+            res.json({
+                status: true,
+                data: result
+            })
+        })
+
+        // get all the packages from db API 
+        app.get('/packages', verifyToken, verifyAdmin, async (req, res) => {
+            const result = await tourPackagesCollection.find().toArray()
+            res.json({
+                status: true,
+                data: result
+            })
+        })
+
+        // get one package from db API 
+        app.get('/package/:id', async (req, res) => {
+            const query = { _id: new ObjectId(req.params.id) }
+            const result = await tourPackagesCollection.findOne(query)
             res.json({
                 status: true,
                 data: result
