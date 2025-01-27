@@ -445,7 +445,7 @@ async function run() {
         })
 
         // get all the packages from db API 
-        app.get('/packages', verifyToken, verifyAdmin, async (req, res) => {
+        app.get('/packages', async (req, res) => {
             const result = await tourPackagesCollection.find().toArray()
             res.json({
                 status: true,
