@@ -490,7 +490,7 @@ async function run() {
 
         // tour guide request related APIS 
         // insert the request for tour guide 
-        app.post('/tour/guide/request', async (req, res) => {
+        app.post('/tour/guide/request', verifyToken, async (req, res) => {
             const body = req.body
             const result = await TourGuideRequestCollection.insertOne(body)
             res.json({
@@ -499,9 +499,77 @@ async function run() {
             })
         })
 
+        // get the all request of tour guide API 
+        app.get('/tour/guide/requests', verifyToken, verifyAdmin, async (req, res) => {
+            const result = await TourGuideRequestCollection.find().toArray()
+            res.json({
+                status: true,
+                data: result
+            })
+        })
+
+        // accepted as a tour guide API 
+        app.patch('/tour/guide/accepted', verifyToken, verifyAdmin, async (req, res) => {
+            try {
+                const body = req.body;
+                const userId = body?.userId;
+
+                if (!ObjectId.isValid(userId)) {
+                    return res.json({ status: false, message: "Invalid User ID" });
+                }
+
+                // Exclude `_id` from update
+                const { _id, ...updateData } = body;
+
+                // Ensure role is updated
+                const userUpdatedDoc = {
+                    $set: { ...updateData, role: "tourGuide" }
+                };
+
+                // Update the user collection
+                const userDataUpdated = await userCollection.updateOne(
+                    { _id: new ObjectId(String(userId)) },
+                    userUpdatedDoc
+                );
+
+                if (userDataUpdated.modifiedCount === 0) {
+                    return res.json({ status: false, message: "User update failed" });
+                }
+
+                // delete from the request collection 
+                const deleteRequest = await TourGuideRequestCollection.deleteOne({ _id: new ObjectId(_id) })
+
+                res.json({
+                    status: true,
+                    message: "Accepted",
+                    userId,
+                    userDataUpdated,
+                    deleteRequest
+                });
+            } catch (error) {
+                console.error("Error:", error);
+                res.json({
+                    status: false,
+                    message: "Internal server error"
+                });
+            }
+        });
+
+        // rejected a tour guide request API 
+        app.delete('/tour/guide/rejected/:id', async (req, res) => {
+            const id = req.params.id
+            const result = await TourGuideRequestCollection.deleteOne({ _id: new ObjectId(id) })
+            res.json({
+                status: true,
+                result,
+                message: "Request Successfully Deleted "
+            })
+        })
+
+
 
         // booking tour related APIS 
-        // insert an tour bookibg API 
+        // insert an tour booking API 
 
 
     } finally {
