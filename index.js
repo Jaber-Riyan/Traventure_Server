@@ -648,6 +648,17 @@ async function run() {
             })
         })
 
+        // get the bookings status API 
+        app.get('/booking/status/:id', verifyToken, async (req, res) => {
+            const id = req.params.id
+            const query = { _id: new ObjectId(id) }
+            const result = await bookingTourCollection.findOne(query)
+            res.json({
+                status: true,
+                data: result.status
+            })
+        })
+
 
     } finally {
         // Ensures that the client will close when you finish/error
