@@ -52,7 +52,10 @@ async function run() {
         const tourPackagesCollection = database.collection('tourpackages')
 
         // request for role collection 
-        const requestRoleCollection = database.collection("role request")
+        const TourGuideRequestCollection = database.collection("tourguiderequest")
+
+        // bookings tour collection 
+        const bookingTourCollection = database.collection("bookingtour")
 
         // menu collection 
         const menuCollection = database.collection('menu');
@@ -193,9 +196,20 @@ async function run() {
         })
 
         // get all the tourGuide users
-        app.get('/tour-guide', async (req, res) => {
+        app.get('/tour-guides', async (req, res) => {
             const query = { role: "tourGuide" }
             const result = await userCollection.find(query).toArray()
+            res.json({
+                status: true,
+                data: result
+            })
+        })
+
+        // get one tour guide user 
+        app.get('/tour-guide/:id', async (req, res) => {
+            const id = req.params.id
+            const query = { _id: new ObjectId(id) }
+            const result = await userCollection.findOne(query)
             res.json({
                 status: true,
                 data: result
@@ -472,6 +486,22 @@ async function run() {
                 data: result
             })
         })
+
+
+        // tour guide request related APIS 
+        // insert the request for tour guide 
+        app.post('/tour/guide/request', async (req, res) => {
+            const body = req.body
+            const result = await TourGuideRequestCollection.insertOne(body)
+            res.json({
+                status: true,
+                data: result
+            })
+        })
+
+
+        // booking tour related APIS 
+        // insert an tour bookibg API 
 
 
     } finally {
