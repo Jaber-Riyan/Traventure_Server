@@ -601,6 +601,52 @@ async function run() {
 
         // booking tour related APIS 
         // insert an tour booking API 
+        app.post('/booking', verifyToken, async (req, res) => {
+            const body = req.body
+            const guideEmail = body.tourGuide
+            const user = await userCollection.findOne({ email: guideEmail })
+            const updatedInsert = {
+                ...body, guideName: user?.name
+            }
+            const result = await bookingTourCollection.insertOne(updatedInsert)
+            res.json({
+                status: true,
+                data: result
+            })
+        })
+
+        // get booking for specific user API 
+        app.get('/booking/:email', verifyToken, async (req, res) => {
+            const email = req.params.email
+            const query = { touristEmail: email }
+            const result = await bookingTourCollection.find(query).toArray()
+            res.json({
+                status: true,
+                data: result
+            })
+        })
+
+        // delete the one booking API 
+        app.delete('/booking/:id', verifyToken, async (req, res) => {
+            const id = req.params.id
+            const query = { _id: new ObjectId(id) }
+            const result = await bookingTourCollection.deleteOne(query)
+            res.json({
+                status: true,
+                data: result
+            })
+        })
+
+        // get guide bookings API 
+        app.get('/guide/bookings/:email', verifyToken, async (req, res) => {
+            const email = req.params.email
+            const query = { tourGuide: email }
+            const result = await bookingTourCollection.find(query).toArray()
+            res.json({
+                status: true,
+                data: result
+            })
+        })
 
 
     } finally {
