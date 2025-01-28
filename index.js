@@ -57,11 +57,11 @@ async function run() {
         // bookings tour collection 
         const bookingTourCollection = database.collection("bookingtour")
 
+        // stories collection 
+        const storiesCollection = database.collection("stories")
+
         // menu collection 
         const menuCollection = database.collection('menu');
-
-        // reviews collection 
-        const reviewsCollection = database.collection('reviews');
 
         // carts collection 
         const cartCollection = database.collection('cart');
@@ -90,7 +90,7 @@ async function run() {
                     console.error('JWT Verification Error:', err.message);
                     return res.status(401).json({ message: err.message });
                 }
-                console.log('Decoded Token:', decoded);
+                // console.log('Decoded Token:', decoded);
                 req.user = decoded;
                 next();
             })
@@ -566,6 +566,37 @@ async function run() {
             })
         })
 
+
+        // stories related APIS 
+        // insert an story API 
+        app.post('/story', verifyToken, async (req, res) => {
+            const body = req.body
+            const result = await storiesCollection.insertOne(body)
+            res.json({
+                status: true,
+                data: result
+            })
+        })
+
+        // get stories for specific user and admin
+        app.get('/stories/:email', async (req, res) => {
+            const email = req.params.email
+            const result = await storiesCollection.find({ email: email }).toArray()
+            res.json({
+                status: true,
+                data: result
+            })
+        })
+
+
+        // all stories 
+        app.get('/stories-all', async (req, res) => {
+            const result = await storiesCollection.find().toArray()
+            res.json({
+                status: true,
+                data: result
+            })
+        })
 
 
         // booking tour related APIS 
