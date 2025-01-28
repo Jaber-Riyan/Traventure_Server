@@ -80,7 +80,7 @@ async function run() {
 
             // get token from the headers 
             const token = req?.headers?.authorization;
-            console.log("Received Token", token);
+            // console.log("Received Token", token);
 
             jwt.verify(token, process.env.JWT_SECRET, (err, decoded) => {
                 if (err) {
@@ -186,6 +186,16 @@ async function run() {
         // get all users API 
         app.get('/users', verifyToken, verifyAdmin, async (req, res) => {
             const result = await userCollection.find().toArray();
+            res.json({
+                status: true,
+                data: result
+            })
+        })
+
+        // get all the tourGuide users
+        app.get('/tour-guide', async (req, res) => {
+            const query = { role: "tourGuide" }
+            const result = await userCollection.find(query).toArray()
             res.json({
                 status: true,
                 data: result
